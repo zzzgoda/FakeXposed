@@ -32,11 +32,10 @@ import com.sanfengandroid.common.bean.ExecBean;
 import com.sanfengandroid.common.model.base.BaseShowDataModel;
 import com.sanfengandroid.common.model.base.EditDataModel;
 import com.sanfengandroid.common.model.base.ShowDataModel;
-import com.sanfengandroid.fakexposed.R;
-import com.sanfengandroid.fakexposed.XpApplication;
-import com.sanfengandroid.fakexposed.viewmodel.ApplicationViewModel;
+import com.sanfengandroid.datafilter.R;
+import com.sanfengandroid.datafilter.XpApplication;
+import com.sanfengandroid.datafilter.viewmodel.ApplicationViewModel;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -57,13 +56,13 @@ public class RuntimeExecModel extends BaseShowDataModel {
         tv.setText(bean.oldCmd);
         tv = vh.itemView.findViewById(R.id.new_cmd_tv);
         tv.setText(bean.newCmd);
-        if (bean.args != null) {
+        if (bean.matchArgv) {
+            tv = vh.itemView.findViewById(R.id.old_cmd_args_tv);
+            tv.setText(bean.oldArgv);
+        }
+        if (bean.newArgv != null) {
             tv = vh.itemView.findViewById(R.id.new_cmd_args_tv);
-            StringBuilder sb = new StringBuilder();
-            for (String s : bean.args) {
-                sb.append(s).append('\n');
-            }
-            tv.setText(sb.toString());
+            tv.setText(bean.newArgv);
         }
         tv = vh.itemView.findViewById(R.id.input_stream_string);
         tv.setText(bean.inputStream == null ? "null" : bean.inputStream);
@@ -78,13 +77,13 @@ public class RuntimeExecModel extends BaseShowDataModel {
         JSONObject json = super.serialization();
         json.put("old", bean.oldCmd);
         json.put("new", bean.newCmd);
-        json.put("replace_args", bean.replaceArgs);
-        if (bean.args != null) {
-            JSONArray array = new JSONArray();
-            for (String s : bean.args) {
-                array.put(s);
-            }
-            json.put("args", array);
+        json.put("match_args", bean.matchArgv);
+        json.put("replace_args", bean.replaceArgv);
+        if (bean.matchArgv) {
+            json.put("old_args", bean.oldArgv);
+        }
+        if (bean.replaceArgv) {
+            json.put("new_args", bean.newArgv);
         }
         if (bean.inputStream != null) {
             json.put("input", bean.inputStream);
@@ -103,15 +102,15 @@ public class RuntimeExecModel extends BaseShowDataModel {
         super.unSerialization(json);
         bean = new ExecBean();
         bean.oldCmd = json.getString("old");
-        bean.newCmd = json.getString("new");
-        JSONArray array = json.optJSONArray("args");
-        if (array != null) {
-            bean.args = new String[array.length()];
-            for (int i = 0; i < bean.args.length; i++) {
-                bean.args[i] = array.getString(i);
-            }
+        bean.newCmd = json.optString("new");
+        bean.matchArgv = json.getBoolean("match_args");
+        bean.replaceArgv = json.getBoolean("replace_args");
+        if (bean.matchArgv) {
+            bean.oldArgv = json.optString("old_args");
         }
-        bean.replaceArgs = json.getBoolean("replace_args");
+        if (bean.replaceArgv) {
+            bean.newArgv = json.optString("new_args");
+        }
         bean.inputStream = json.optString("input");
         bean.errStream = json.optString("error");
         bean.outStream = json.optString("input");
@@ -139,25 +138,28 @@ public class RuntimeExecModel extends BaseShowDataModel {
     }
 
     public static class RuntimeExecEditModel implements EditDataModel {
-        private EditText oldCmdEt, newCmdEt, argsEt, inputEt, outputEt, errorEt;
-        private CheckBox replaceArgsCb;
+        private EditText oldCmdEt, oldArgEt, newCmdEt, argsEt, inputEt, outputEt, errorEt;
+        private CheckBox replaceArgsCb, matchArgsCb;
         private int index = ApplicationViewModel.NO_INDEX;
 
         @Override
         public View onCreateView(Context context) {
             View view = LayoutInflater.from(context).inflate(R.layout.runtime_exec_add_item, null, false);
             oldCmdEt = view.findViewById(R.id.item_old_cmd_et);
+            oldArgEt = view.findViewById(R.id.item_old_args_et);
             newCmdEt = view.findViewById(R.id.item_cmd_et);
             argsEt = view.findViewById(R.id.item_args_et);
             inputEt = view.findViewById(R.id.item_input_string_et);
             outputEt = view.findViewById(R.id.item_output_string_et);
             errorEt = view.findViewById(R.id.item_error_string_et);
+
+            matchArgsCb = view.findViewById(R.id.item_args_match);
+            LinearLayout argLayout = view.findViewById(R.id.item_old_args_tip);
+            matchArgsCb.setOnCheckedChangeListener((buttonView, isChecked) -> argLayout.setVisibility(isChecked ? View.VISIBLE : View.GONE));
+
             replaceArgsCb = view.findViewById(R.id.item_args_replace);
             LinearLayout layout = view.findViewById(R.id.item_args_tip);
-            replaceArgsCb.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                layout.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            });
-
+            replaceArgsCb.setOnCheckedChangeListener((buttonView, isChecked) -> layout.setVisibility(isChecked ? View.VISIBLE : View.GONE));
             return view;
         }
 
@@ -167,14 +169,13 @@ public class RuntimeExecModel extends BaseShowDataModel {
             RuntimeExecModel model = (RuntimeExecModel) data;
             oldCmdEt.setText(model.bean.oldCmd);
             newCmdEt.setText(model.bean.newCmd);
-            replaceArgsCb.setChecked(model.bean.replaceArgs);
-            if (model.bean.replaceArgs && model.bean.args.length > 0) {
-                StringBuilder sb = new StringBuilder();
-                for (String s : model.bean.args) {
-                    sb.append(s).append(' ');
-                }
-                sb.deleteCharAt(sb.length() - 1);
-                argsEt.setText(sb.toString());
+            matchArgsCb.setChecked(model.bean.matchArgv);
+            replaceArgsCb.setChecked(model.bean.replaceArgv);
+            if (matchArgsCb.isChecked()) {
+                oldArgEt.setText(model.bean.oldArgv);
+            }
+            if (replaceArgsCb.isChecked()) {
+                argsEt.setText(model.bean.newArgv);
             }
             inputEt.setText(model.bean.inputStream);
             outputEt.setText(model.bean.outStream);
@@ -191,9 +192,16 @@ public class RuntimeExecModel extends BaseShowDataModel {
             ExecBean bean = new ExecBean();
             bean.oldCmd = old;
             bean.newCmd = newCmdEt.getText().toString();
-            bean.replaceArgs = replaceArgsCb.isChecked();
-            if (bean.replaceArgs) {
-                bean.args = argsEt.getText().toString().split(" ");
+            if (TextUtils.isEmpty(bean.newCmd)) {
+                bean.newCmd = old;
+            }
+            bean.matchArgv = matchArgsCb.isChecked();
+            if (bean.matchArgv) {
+                bean.oldArgv = oldArgEt.getText().toString();
+            }
+            bean.replaceArgv = replaceArgsCb.isChecked();
+            if (bean.replaceArgv) {
+                bean.newArgv = argsEt.getText().toString();
             }
             String value = inputEt.getText().toString();
             if (!TextUtils.isEmpty(value)) {

@@ -17,6 +17,10 @@
 
 package com.sanfengandroid.common.bean;
 
+import android.text.TextUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ExecBean {
@@ -25,18 +29,31 @@ public class ExecBean {
      * 旧命令
      */
     public String oldCmd;
+
+    /*
+     * 旧命令参数，添加参数更加细致的匹配
+     * */
+    public String oldArgv;
+
+    public String[] oldArgs;
+
+    public boolean matchArgv;
     /**
      * 替换新命令
      */
     public String newCmd;
+
     /**
      * true才替换参数
      */
-    public boolean replaceArgs;
+    public boolean replaceArgv;
     /**
      * 新改变参数
      */
-    public String[] args;
+    public String newArgv;
+
+    public String[] newArgs;
+
     /**
      * 替换并固定原始输入流
      */
@@ -56,12 +73,68 @@ public class ExecBean {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ExecBean bean = (ExecBean) o;
-        return oldCmd.equals(bean.oldCmd) &&
-                Objects.equals(newCmd, bean.newCmd);
+        return matchArgv == bean.matchArgv &&
+                oldCmd.equals(bean.oldCmd) &&
+                Objects.equals(oldArgv, bean.oldArgv);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(oldCmd, newCmd);
+        return Objects.hash(oldCmd, oldArgv, matchArgv);
+    }
+
+    @Override
+    public String toString() {
+        return "ExecBean{" +
+                "oldCmd='" + oldCmd + '\'' +
+                ", oldArgv='" + oldArgv + '\'' +
+                ", matchArgv=" + matchArgv +
+                ", newCmd='" + newCmd + '\'' +
+                ", replaceArgv=" + replaceArgv +
+                ", newArgv='" + newArgv + '\'' +
+                ", inputStream='" + inputStream + '\'' +
+                ", outStream='" + outStream + '\'' +
+                ", errStream='" + errStream + '\'' +
+                '}';
+    }
+
+    public static String[] toJavaStringArguments(String input) {
+        if (input == null || input.isEmpty()) {
+            return null;
+        }
+        String[] parameters = input.split(" ");
+        if (parameters.length == 1) {
+            return parameters;
+        }
+        List<String> list = new ArrayList<>();
+        String str = null;
+        for (String parameter : parameters) {
+            if (str == null) {
+                str = parameter;
+                continue;
+            }
+            if (str.endsWith("\\")) {
+                str += parameter;
+            } else {
+                str = parameter;
+                list.add(str);
+            }
+        }
+        if (str != null){
+            list.add(str);
+        }
+        return list.toArray(new String[0]);
+    }
+
+    public void transform() {
+        if (!TextUtils.isEmpty(oldArgv)) {
+            oldArgs = toJavaStringArguments(oldArgv);
+        }
+        if (!TextUtils.isEmpty(newArgv) && replaceArgv) {
+            newArgs = toJavaStringArguments(newArgv);
+        }
+        if (!TextUtils.isEmpty(inputStream) && !inputStream.endsWith("\n")){
+            inputStream += "\n";
+        }
     }
 }

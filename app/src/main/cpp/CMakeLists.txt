@@ -25,17 +25,17 @@ include_directories(interface)
 set(COPY_DIR ${CMAKE_ANDROID_ARCH_ABI})
 if (${MERGE_BUILD} AND ${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
 	set(COPY_DIR "armeabi-v7a")
-	set(HOOK_MODULE_NAME ${HOOK_MODULE_NAME}64)
 elseif (${MERGE_BUILD} AND ${CMAKE_ANDROID_ARCH_ABI} STREQUAL "x86_64")
 	set(COPY_DIR "x86")
-	set(HOOK_MODULE_NAME ${HOOK_MODULE_NAME}64)
 endif ()
-
-message(STATUS "api:${ANDROID_PLATFORM}, build type:${THIS_BUILD_TYPE}, hook module:${HOOK_MODULE_NAME}, copy dir:${COPY_DIR}")
+if(${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a" OR ${CMAKE_ANDROID_ARCH_ABI} STREQUAL "x86_64")
+	set(HOOK_MODULE_NAME ${HOOK_MODULE_NAME}64)
+endif()
+message(STATUS "api:${ANDROID_PLATFORM}, build type:${THIS_BUILD_TYPE}, hook module:${HOOK_MODULE_NAME}, merge build:${MERGE_BUILD}, copy dir:${COPY_DIR}")
 
 add_library(
-        ${HOOK_MODULE_NAME}
-        SHARED
+		${HOOK_MODULE_NAME}
+		SHARED
 
 		hook/hook_common.cpp
 		hook/hook_main.cpp
@@ -54,12 +54,13 @@ add_library(
 		hook/hook_properties.cpp
 		hook/canonicalize_md.c
 
-        common/maps_util.cpp
+		# Java Native Hook
+		hook/hook_java_native.cpp
 
+		common/maps_util.cpp
 		# JNI Common
 		common/jni_helper.cpp
 )
-
 
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -69,11 +70,11 @@ add_library(
 # completing its build.
 
 find_library( # Sets the name of the path variable.
-        log-lib
+		log-lib
 
-        # Specifies the name of the NDK library that
-        # you want CMake to locate.
-        log)
+		# Specifies the name of the NDK library that
+		# you want CMake to locate.
+		log)
 
 
 # Specifies libraries CMake should link to your target library. You
@@ -81,11 +82,11 @@ find_library( # Sets the name of the path variable.
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries(
-        ${HOOK_MODULE_NAME}
-        ${log-lib})
+		${HOOK_MODULE_NAME}
+		${log-lib})
 set_target_properties(${HOOK_MODULE_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/../libs/${THIS_BUILD_TYPE}/${COPY_DIR})
+		RUNTIME_OUTPUT_DIRECTORY
+		${CMAKE_CURRENT_SOURCE_DIR}/../libs/${THIS_BUILD_TYPE}/${COPY_DIR})
 
 set_target_properties(${HOOK_MODULE_NAME} PROPERTIES
 		LIBRARY_OUTPUT_DIRECTORY

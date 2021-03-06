@@ -17,11 +17,11 @@ FUN_INTERCEPT HOOK_DEF(int, __system_property_get, const char *name, char *value
     if (ret < 1) {
         return ret;
     }
-    if (PropertiesIsBlacklisted(name)) {
+    if (FXHandler::PropertyIsBlacklisted(name)) {
         value[0] = '\0';
         return 0;
     }
-    const char *new_value = PropertiesReplace(name, value);
+    const char *new_value = FXHandler::PropertyReplace(name, value);
     if (new_value != nullptr) {
         LOGD("__system_property_get property place old value: %s, new value: %s", value, new_value);
         strcpy(value, new_value);
@@ -32,15 +32,18 @@ FUN_INTERCEPT HOOK_DEF(int, __system_property_get, const char *name, char *value
 
 FUN_INTERCEPT HOOK_DEF(const prop_info *, __system_property_find, const char *name) {
     const prop_info *ret = get_orig___system_property_find()(name);
-    LOGMV("name: %s, result: %p", name, ret);
-    return ret != nullptr && PropertiesIsBlacklisted(name) ? nullptr : ret;
+    // 修复Android 7及以下 libcutil 出现的循环依赖问题，会递归查找
+    if (FXHandler::Get()->api > __ANDROID_API_O__){
+        LOGMV("name: %s, result: %p", name, ret);
+    }
+    return ret != nullptr && FXHandler::PropertyIsBlacklisted(name) ? nullptr : ret;
 }
 
 std::map<void *, void (*)(void *, const char *, const char *, uint32_t)> callbacks;
 
 static void handle_system_property(void *cookie, const char *name, const char *value, uint32_t serial) {
     void (*callback)(void *, const char *, const char *, uint32_t) = callbacks[cookie];
-    const char *new_value = PropertiesReplace(name, value);
+    const char *new_value = FXHandler::PropertyReplace(name, value);
     callback(cookie, name, new_value == nullptr ? value : new_value, serial);
 }
 
@@ -48,7 +51,7 @@ FUN_INTERCEPT HOOK_DEF(void, __system_property_read_callback,
                        const prop_info *pi,
                        void (*callback)(void *__cookie, const char *__name, const char *__value, uint32_t __serial),
                        void *cookie) __INTRODUCED_IN(26) {
-    LOGMV("prop_info: %p, cookie: %p", pi, cookie);
+//    LOGMV("prop_info: %p, cookie: %p", pi, cookie);
     if (cookie == nullptr) {
         get_orig___system_property_read_callback()(pi, callback, cookie);
         return;

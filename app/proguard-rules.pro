@@ -29,10 +29,6 @@
 
 }
 
--keep public class com.sanfengandroid.fakexposed.ui.fragments.MainFragment{
-    private boolean isActive();
-}
-
--keep public class com.sanfengandroid.xp.SecureThrowable{
-    *;
+-keep public class com.sanfengandroid.datafilter.ui.fragments.MainFragment{
+    public static boolean isActive();
 }

@@ -26,7 +26,7 @@ static long (*orig_syscall)(long number, ...);
 
 C_API long (*get_orig_syscall(void))(long number, ...) {
     if (!orig_syscall) {
-        orig_syscall = reinterpret_cast<long (*)(long number, ...)>(FindLibcSymbolRealAddress("syscall"));
+        orig_syscall = reinterpret_cast<long (*)(long number, ...)>(FXHandler::FindLibcSymbolRealAddress("syscall"));
         CHECK(orig_syscall);
     }
     return orig_syscall;
@@ -135,7 +135,7 @@ INTERCEPT_SYSCALL(readlinkat, int dir_fd, const char *path, char *buf, size_t bu
     if (result >= 0 && buf[0] == '/') {
         buf[buf_size] = '\0';
         const char *src = IoRedirect::RedirectToSource(buf);
-        if (src != buf) {
+        if (src != nullptr && src != buf) {
             // 将结尾0拷贝,以防原始路径过短字符串错误
             result = strlen(src);
             if (result > buf_size) {
@@ -199,7 +199,7 @@ INTERCEPT_SYSCALL(getcwd, char *buf, size_t size) {
         return result;
     }
     const char *real = IoRedirect::RedirectToSourceDirectory(buf);
-    if (real == buf) {
+    if (real == buf || real == nullptr) {
         return result;
     }
     size_t len = strlen(real);
@@ -228,6 +228,11 @@ C_API long syscall(long number, ...) {
     }
     LOGV("Monitor: syscall invoke number: %ld", number);
     switch (number) {
+#ifndef __aarch64__
+        case __NR_open:
+            ret = CALL_INTERCEPT(openat, AT_FDCWD, reinterpret_cast<const char *>(arg[0]), GPOINTER_TO_SIZE(arg[1]), GPOINTER_TO_SIZE(arg[2]));
+            break;
+#endif
         case __NR_openat:
             ret = CALL_INTERCEPT(openat, GPOINTER_TO_SIZE(arg[0]), reinterpret_cast<const char *>(arg[1]), GPOINTER_TO_SIZE(arg[2]), GPOINTER_TO_SIZE(arg[3]));
             break;

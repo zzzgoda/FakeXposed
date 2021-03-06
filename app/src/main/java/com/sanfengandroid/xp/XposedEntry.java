@@ -27,10 +27,11 @@ import android.util.Log;
 import com.sanfengandroid.common.Const;
 import com.sanfengandroid.common.model.base.ShowDataModel;
 import com.sanfengandroid.common.util.LogUtil;
+import com.sanfengandroid.datafilter.BuildConfig;
 import com.sanfengandroid.fakeinterface.GlobalConfig;
 import com.sanfengandroid.fakeinterface.NativeHook;
 import com.sanfengandroid.fakeinterface.NativeInit;
-import com.sanfengandroid.fakexposed.BuildConfig;
+import com.sanfengandroid.fakeinterface.NativeTestActivity;
 import com.sanfengandroid.xp.hooks.XposedFilter;
 
 import java.lang.reflect.Constructor;
@@ -87,20 +88,23 @@ public class XposedEntry implements IXposedHookLoadPackage {
                     Context contextImpl = createAppContext(lpparam.appInfo);
                     XpConfigAgent.setDataMode(XpDataMode.X_SP);
                     XpConfigAgent.setProcessMode(ProcessMode.SELF);
-                    NativeHook.initLibraryPath(contextImpl);
-                    if (BuildConfig.DEBUG) {
-                        new XposedFilter().hook(lpparam.classLoader);
-                        NativeInit.initNative(contextImpl, lpparam.processName);
-                    }
+                    NativeHook.initLibraryPath(contextImpl, lpparam.appInfo.targetSdkVersion);
+
+                    NativeTestActivity.initTestData(contextImpl);
+                    NativeInit.initNative(contextImpl, lpparam.processName);
+                    new XposedFilter().hook(lpparam.classLoader);
+                    NativeInit.startNative();
                 }
                 return;
             }
-
+            LogUtil.w(TAG, "targetSDK: %d, current class loader: %s", lpparam.appInfo.targetSdkVersion, XposedEntry.class.getClassLoader());
             Context contextImpl = createAppContext(lpparam.appInfo);
             XpDataMode mode;
             // 使用自身ContentProvider如果未启动则手动启动,这样会增加很长的启动时间
             mode = XpConfigAgent.xSharedPreferencesAvailable() ? XpDataMode.X_SP : XpDataMode.APP_CALL;
             XpConfigAgent.setDataMode(mode);
+            LogUtil.d(TAG, "current data mode: %s", mode.name());
+            XposedBridge.log(TAG + " current data mode: " + mode.name());
             XpConfigAgent.setProcessMode(ProcessMode.HOOK_APP);
             if (!XpConfigAgent.getHookAppEnable(contextImpl, lpparam.packageName)) {
                 return;
@@ -112,9 +116,10 @@ public class XposedEntry implements IXposedHookLoadPackage {
             }
             GlobalConfig.init(map);
             GlobalConfig.removeThis(lpparam.packageName);
-            NativeHook.initLibraryPath(contextImpl);
-            new XposedFilter().hook(lpparam.classLoader);
+            NativeHook.initLibraryPath(contextImpl, lpparam.appInfo.targetSdkVersion);
             NativeInit.initNative(contextImpl, lpparam.processName);
+            new XposedFilter().hook(lpparam.classLoader);
+            NativeInit.startNative();
             hasHook = true;
         } catch (Throwable e) {
             LogUtil.e(TAG, "Hook error", e);
@@ -197,7 +202,7 @@ public class XposedEntry implements IXposedHookLoadPackage {
     }
 
     private void hookSelf(ClassLoader loader) throws ClassNotFoundException {
-        XposedHelpers.findAndHookMethod(loader.loadClass("com.sanfengandroid.fakexposed.ui.fragments.MainFragment"), "isActive", new XC_MethodHook() {
+        XposedHelpers.findAndHookMethod(loader.loadClass("com.sanfengandroid.datafilter.ui.fragments.MainFragment"), "isActive", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 param.setResult(true);

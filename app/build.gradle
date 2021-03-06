@@ -24,9 +24,9 @@ plugins {
 def highHookModuleName = 'hookh'
 def lowHookModuleName = 'hookl'
 def hookModuleName = (rootProject.props['buildApi'] ?: rootProject.targetSdk) >= 24 ? highHookModuleName : lowHookModuleName
-def mVersionCode = 1000
-def mVersionName = "1.0"
-
+def mVersionCode = 1500
+def mVersionName = "1.5"
+def appType = rootProject.props['appType']
 android {
     compileSdkVersion 30
     if (rootProject.props['hasSign']) {
@@ -40,7 +40,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId "com.sanfengandroid.fakexposed"
+        applicationId "com.sanfengandroid.datafilter"
         minSdkVersion 21
         targetSdkVersion rootProject.targetSdk
         versionCode mVersionCode
@@ -54,7 +54,7 @@ android {
                 cFlags ""
                 abiFilters.addAll(rootProject.props['abis'] ?: ['armeabi-v7a', 'x86', 'arm64-v8a', 'x86_64'])
                 arguments '-DANDROID_PLATFORM=' + (rootProject.props['buildApi']), "-DHOOK_MODULE_NAME=${hookModuleName}",
-                        '-DMERGE_BUILD=' + (rootProject.props['mergeBuild'] ?: true),
+                        '-DMERGE_BUILD=' + rootProject.props['mergeBuild'],
                         '-DHOOK_LOG_LEVEL=' + (rootProject.props['logLevel']),
                         "-DMODULE_VERSION=${mVersionCode}",
                         "-DMODULE_VERSION_NAME=\"${mVersionName}\""
@@ -63,6 +63,7 @@ android {
         buildConfigField 'String', 'HOOK_MODULE_NAME', "\"${hookModuleName}\""
         buildConfigField 'String', 'HOOK_HIGH_MODULE_NAME', "\"${highHookModuleName}\""
         buildConfigField 'String', 'HOOK_LOW_MODULE_NAME', "\"${lowHookModuleName}\""
+        buildConfigField 'String', 'APP_TYPE', "\"${appType}\""
 
     }
 
@@ -75,7 +76,7 @@ android {
                 signingConfig signingConfigs.sign
             }
         }
-        debug{
+        debug {
             if (rootProject.props['hasSign']) {
                 signingConfig signingConfigs.sign
             }
@@ -97,14 +98,31 @@ android {
         variant.sourceSets.each {
             it.jniLibs.srcDirs = ["src/main/libs/${buildType}"]
         }
+        variant.outputs.all {
+            outputFileName = "datafilter-${buildType}-${mVersionName}-${appType}.apk"
+        }
     }
 }
+
 tasks.whenTaskAdded { task ->
     if (task.name.startsWith('merge') && task.name.endsWith('JniLibFolders')) {
         task.doLast {
             it.outputs.files.files.each { File dir ->
+                dir.eachDir {
+                    if (appType == 'x86' && (it.name == 'armeabi-v7a' || it.name == 'arm64-v8a')) {
+                        it.deleteDir()
+                    } else if (appType == 'arm' && (it.name == 'x86' || it.name == 'x86_64')) {
+                        it.deleteDir()
+                    }
+                }
                 dir.eachFileRecurse {
-                    if (it.name == "lib${hookModuleName}.so") {
+                    if (it.parentFile.name == 'x86_64' || it.parentFile.name == 'arm64-v8a') {
+                        if (!rootProject.props['mergeBuild'] && it.name == "lib${hookModuleName}64.so") {
+                            println "delete current build hook module: ${it.name}"
+                            it.delete()
+                        }
+                    } else if (it.name == "lib${hookModuleName}.so") {
+                        println "delete building library: ${it.absolutePath}"
                         it.delete()
                     }
                 }

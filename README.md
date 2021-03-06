@@ -1,15 +1,21 @@
 # FakeXposed
 ![License](https://img.shields.io/badge/License-Apache2-blue)
 
-Chinese document click [here](README_CN.md)
+中文文档点击 [这里](README_CN.md)
 
-## QQ Group [1042999608](https://jq.qq.com/?_wv=1027&k=T2uqtjjE)
-- Since there may be many problems at present, Q group can be added to facilitate communication
+## 公众号
+**关注我的公众号可以第一时间收到我的最新原创技术文章分享**
 
-    ![](https://cdn.jsdelivr.net/gh/sanfengAndroid/sanfengAndroid.github.io@main/images/qq_group.jpg)
+![](https://cdn.jsdelivr.net/gh/sanfengAndroid/sanfengAndroid.github.io@main/images/wechat_channel.png)
+
+## Changlog
+[Changelog](docs/en/app_changes.md)
 
 ## Project description
-Use [fake-linker](https://github.com/sanfengAndroid/fake-linker) in combination with `Xposed` to provide `Java` and `Native` bidirectional shielding of `Xposed` detection, and also provide additional file redirection, `JNI` monitor, file access control, provide to other modules to dynamically add or modify the configuration in the process. 
+Use [fake-linker](https://github.com/sanfengAndroid/fake-linker) to combine with `Xposed`, provide `Java` and `Native` two-way shielding data detection, also provide additional file redirection, `JNI `Monitor, file access control, provide to other software to dynamically add or modify the configuration in the process.
+
+## Use statement
+This software is only used for safety study and research, to help analyze malicious software and prohibit malicious software from accessing part of the mobile phone data. Please do not use it for other purposes. It is strictly forbidden to use this software for all behaviors that violate your local laws. Otherwise, all legal liabilities And all consequences are borne by the user, and have nothing to do with the developer
 
 ## Principle analysis introduction
 View [FakeXposed principle analysis](https://sanfengandroid.github.io/2021/02/20/fakexposed-principle-analyze/) 
@@ -27,16 +33,18 @@ Android version: `Android 5.0` ~ `Android 11`+. Support instructions: `x86`, `x8
   - Set `ANDROID_SDK_ROOT` to the system environment variable, and install `Android NDK 22.0.7026061`, which can be done in `Android Studio SDK Manager`
   - Run `python build.py -vrm all` to execute a complete `Release` build 
   - Run `python build.py -vrm api 30` to compile only `Android Api level 30`
-  - For more options, please see the [build.py](build.py) script 
+  - For more options, please see the [build.py](build.py) script
+  - Note that `Android Api 25` uses the native module of `Android Api 24`. The `Api 24` used during compilation will not correspond to libxxx25.so
 
 ## Download
 [Download the latest Release version](https://github.com/sanfengAndroid/FakeXposed/releases/latest)
 
 ## Usage
-1. This application is the `Xposed` module, not limited to the original `Xposed`, `Taichi`, `EdXposed`, `VirtualXposed`, you need to enable the module in the specified `Xposed manager` .Normal status is as follows ![home](capture/en/home.png)
-2. Enable `Global Hook` and specify `Application Hook` as needed, and the module will determine whether to enable an application separately. Long press to turn on/off ![package_configuration](capture/en/package_configuration.png)
-3. Configure different hook options for each application or globally, such as file blacklist, hidden `maps` rules, file redirection, access control, package visibility, etc. ![package_hidden](capture/en/package_hidden.png) ![dlsym_hidden](capture/en/dlsym_hidden.png)
-4. `Android 7` The following data sharing uses `XSharedPreferences` without additional permissions. If you have `root` permissions on Android 7 and above, it is recommended to use `root` permissions to install configuration files to another path for other applications to access, otherwise you need to set This software has `self-start` permission, and uses `ContentProvider` to exchange data, which may significantly increase the start-up time 
+1. This application is the `Xposed` module, not limited to the original `Xposed`, `Taichi`, `EdXposed`, `VirtualXposed`, you need to enable the module in the specified `Xposed manager` .
+2. Enable `Global Hook` and specify `Application Hook` as needed, and the module will determine whether to enable an application separately. Long press to turn on/off 
+3. Configure different hook options for each application or globally, such as file blacklist, hidden `maps` rules, file redirection, access control, package visibility, etc. !
+4. The following data sharing of `Android 9` uses `XSharedPreferences` without additional permissions. The non-`Edxposed` version of `Android 9` may not be able to read the configuration data. Therefore, it is recommended to use the `root` permission to install the configuration file to another path. For other applications to access, otherwise, you need to set the software's `self-start` permission plus background execution, and use `ContentProvider` to exchange data, which may significantly increase the startup time
+5. Please select the `x86` version for the emulator, and the `arm` version for normal phones
 
 ## Other module calls
 - Get the `ClassLoader` of the module

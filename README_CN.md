@@ -1,19 +1,25 @@
-# FakeXposed
+# 数据滤镜
 ![License](https://img.shields.io/badge/License-Apache2-blue)
 
-## Q群 [1042999608](https://jq.qq.com/?_wv=1027&k=T2uqtjjE)
-- 由于目前问题可能较多，为方便交流可以加Q群
+## 公众号
+**关注我的公众号可以第一时间收到我的最新原创技术文章分享**
 
-    ![](https://cdn.jsdelivr.net/gh/sanfengAndroid/sanfengAndroid.github.io@main/images/qq_group.jpg)
+![](https://cdn.jsdelivr.net/gh/sanfengAndroid/sanfengAndroid.github.io@main/images/wechat_channel.png)
+    
+## 更新日志
+[更新日志](docs/cn/app_changes.md)
 
 ## 项目描述
-使用 [fake-linker](https://github.com/sanfengAndroid/fake-linker) 与 `Xposed` 结合，提供 `Java` 和 `Native` 双向屏蔽 `Xposed`检测，还提供额外的文件重定向、`JNI`监听、文件访问权限控制、提供给其它模块在进程内动态添加或修改配置。
+使用 [fake-linker](https://github.com/sanfengAndroid/fake-linker) 与 `Xposed` 结合，提供 `Java` 和 `Native` 双向屏蔽数据检测，还提供额外的文件重定向、`JNI`监听、文件访问权限控制、提供给其它软件在进程内动态添加或修改配置。
+
+## 使用声明
+本软件仅用于安全学习研究，帮助分析恶意软件，请勿用于其它用途，严禁将本软件用于与您当地法律相违背的一切行为，否者一切法律责任及所有后果均由使用方承担，与开发者无关
 
 ## 原理分析介绍
-查看 [FakeXposed原理分析](https://sanfengandroid.github.io/2021/02/20/fakexposed-principle-analyze/)
+查看 [数据滤镜原理分析](https://sanfengandroid.github.io/2021/02/20/fakexposed-principle-analyze/)
 
 ## 支持的Android版本
-支持版本：`Android 5.0 ~ Android 11+`，支持架构：`x86`，`x86_64`，`arm`，`arm64`，`Api 25`由于新版本 `NDK` 移除需要自行改变 `NDK` 版本适配编译
+支持版本：`Android 5.0 ~ Android 11+`，支持架构：`x86`，`x86_64`，`arm`，`arm64`
 
 ## 构建
 - 需要的编译环境：任何支持`Android Studio`的平台， `Python 3.6+`（脚本编译使用）
@@ -26,17 +32,17 @@
   - 运行 `python build.py -vrm all` 执行完整 `Release` 编译
   - 运行 `python build.py -vrm api 30`只编译`Android Api level 30`
   - 更多选项请查看 [build.py](build.py) 脚本
+  - 注意 `Android Api 25` 使用的是 `Android Api 24` 的 native 模块，编译时使用的 `Api 24` 因此不会有对应 libxxx25.so
 
 ## 下载
 [最新Release版本下载](https://github.com/sanfengAndroid/FakeXposed/releases/latest)
 
 ## 使用介绍
-1. 本软件是`Xposed`模块，不限于原版`Xposed`，`Taichi`，`EdXposed`，`VirtualXposed`，需到指定的 `Xposed管理器` 中启用该模块，状态正常则如下 ![home](capture/cn/home.png)
-2. 根据需要开启`全局Hook` 和指定 `应用Hook`，模块内部会单独判断对某个应用是否启，长按开启/关闭 ![package_configuration](capture/cn/package_configuration.png)
-
-3. 为每一个应用或全局配置不同的Hook选项，如文件黑名单、隐藏`maps`规则、文件重定向、访问控制、包可见性等 ![package_hidden](capture/cn/package_hidden.png) ![dlsym_hidden](capture/cn/dlsym_hidden.png)
-4. `Android 7` 以下数据共享使用 `XSharedPreferences` 无需额外权限，`Android 7` 以上如果有 `root` 权限推荐使用 `root` 权限来安装配置文件到另外的路径以供其它应用访问，否者需要设置本软件 `自启动` 权限，使用 `ContentProvider` 交换数据，这可能会显著增加启动时长
-
+1. 本软件是`Xposed`模块，不限于原版`Xposed`，`Taichi`，`EdXposed`，`VirtualXposed`，需到指定的 `Xposed管理器` 中启用该模块
+2. 根据需要开启`全局Hook` 和指定 `应用Hook`，模块内部会单独判断对某个应用是否启，长按开启/关闭 
+3. 为每一个应用或全局配置不同的Hook选项，如文件黑名单、隐藏`maps`规则、文件重定向、访问控制、包可见性等
+4. `Android 9` 以下数据共享使用 `XSharedPreferences` 无需额外权限，`Android 9` 非 `Edxposed` 版本可能读取不到配置数据，因此荐使用 `root` 权限来安装配置文件到另外的路径以供其它应用访问，否者需要设置本软件 `自启动` 权限加后台执行，使用 `ContentProvider` 交换数据，这可能会显著增加启动时长
+5. 模拟器请选择 `x86` 版本，正常手机选择 `arm` 版本
 ## 其它模块调用
 - 获取模块的 `ClassLoader`
 
